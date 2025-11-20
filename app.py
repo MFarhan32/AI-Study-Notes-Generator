@@ -9,11 +9,11 @@ import tempfile
 st.set_page_config(page_title="AI Study Notes Generator", layout="wide")
 st.title("📚 AI Study Notes Generator")
 
-# Initialize Hugging Face pipelines (open-source)
+# Load smaller Hugging Face model for CPU
 @st.cache_resource
 def load_models():
-    summarizer = pipeline("summarization", model="google/flan-t5-base")
-    qg_pipeline = pipeline("text2text-generation", model="google/flan-t5-base")
+    summarizer = pipeline("summarization", model="google/flan-t5-small")
+    qg_pipeline = pipeline("text2text-generation", model="google/flan-t5-small")
     return summarizer, qg_pipeline
 
 summarizer, qg_pipeline = load_models()
@@ -26,7 +26,7 @@ def extract_text_from_pdf(pdf_file):
             if page_text:
                 text += page_text + "\n"
             else:
-                # If page has no text, try OCR
+                # OCR for scanned pages
                 img = page.to_image(resolution=300).original
                 page_text = pytesseract.image_to_string(img)
                 text += page_text + "\n"
@@ -34,7 +34,6 @@ def extract_text_from_pdf(pdf_file):
 
 def generate_notes(text, max_length=512):
     summary = summarizer(text, max_length=max_length, min_length=50, do_sample=False)[0]['summary_text']
-    # Convert summary into bullet points
     bullets = "\n".join([f"- {line.strip()}" for line in summary.split(". ") if line.strip()])
     return bullets
 
